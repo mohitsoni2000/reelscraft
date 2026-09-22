@@ -1,0 +1,25 @@
+.wrap { background: #fff; padding: 80px 0; display: flex; flex-direction: column; gap: 50px; align-items: center; }
+
+/* Default: native horizontal scroller with snap points. Padding + negative margin leave room for the card shadows,
+   which a scroll container would otherwise clip. */
+.scroller { width: 100%; overflow-x: auto; overflow-y: hidden; padding: 30px 0 70px; margin: -30px 0 -70px; scroll-snap-type: x proximity; scrollbar-width: thin; scrollbar-color: var(--peach) transparent; }
+/* While the section is pinned, the page scroll drives the track, so the scroller stops scrolling. */
+.wrap[data-pinned="true"] .scroller { overflow: hidden; }
+
+.track { display: flex; align-items: center; width: max-content; gap: clamp(16px, 2.2vw, 32px); padding: 20px clamp(16px, 6vw, 85px); will-change: transform; }
+.card { position: relative; flex-shrink: 0; width: clamp(220px, 25.4vw, 366px); aspect-ratio: 366.473 / 518.35; border-radius: 22px; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.18); background: var(--cream); scroll-snap-align: center; transition: scale 0.35s cubic-bezier(.2,.8,.2,1); }
+.card:nth-child(odd) { rotate: -2deg; }
+.card:nth-child(even) { rotate: 2deg; }
+.card:hover { scale: 1.04; }
+.card:active { scale: 1.01; transition-duration: 0.15s; }
+.img { width: 100%; height: 100%; object-fit: cover; }
+
+.ruleRow { position: relative; width: calc(100% - clamp(32px, 12vw, 170px)); display: flex; justify-content: center; align-items: center; }
+.rule { position: absolute; left: 0; right: 0; top: 50%; }
+.caption { position: relative; padding: 0 24px; background: #fff; font-size: clamp(26px, 3.3vw, 47px); font-weight: 400; line-height: 0.95; text-align: center; display: flex; align-items: center; gap: 16px; }
+
+@media (max-width: 639.98px) {
+  .wrap { padding: 56px 0; gap: 36px; }
+  .card { width: 62vw; }
+  .caption { padding: 0 12px; }
+}

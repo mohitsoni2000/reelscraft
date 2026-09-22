@@ -1,0 +1,30 @@
+.header { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding: 24px var(--pad-x); }
+.nav { display: flex; align-items: center; flex-wrap: wrap; gap: 30px; font-size: 18px; letter-spacing: 0.04em; }
+.link { position: relative; padding: 4px 0; }
+.underline { position: absolute; left: 0; bottom: -2px; display: block; }
+.underline line { stroke-dashoffset: 1; transition: stroke-dashoffset 0.4s cubic-bezier(0.215, 0.61, 0.355, 1); }
+.link:hover .underline line, .link:focus-visible .underline line { stroke-dashoffset: 0; }
+
+.toggle { display: none; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 1.5px solid var(--peach); border-radius: 12px; background: #fff; color: #000; transition: border-color 0.25s ease, background 0.25s ease, scale 0.15s ease; }
+.toggle:hover { border-color: var(--brown); background: var(--cream); }
+.toggle:active { scale: 0.93; }
+.bars, .bars::before, .bars::after { display: block; width: 20px; height: 2px; border-radius: 2px; background: currentColor; transition: rotate 0.25s ease, top 0.25s ease, background 0.25s ease; }
+.bars { position: relative; }
+.bars::before, .bars::after { content: ""; position: absolute; left: 0; }
+.bars::before { top: -6px; }
+.bars::after { top: 6px; }
+.toggle[aria-expanded="true"] .bars { background: transparent; }
+.toggle[aria-expanded="true"] .bars::before { top: 0; rotate: 45deg; }
+.toggle[aria-expanded="true"] .bars::after { top: 0; rotate: -45deg; }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* Below 640px (keep in sync with the toggle logic in MobileMenu): logo | CTA | toggle, links in a dropdown. */
+@media (max-width: 639.98px) {
+  .header { flex-wrap: nowrap; gap: 12px; padding: 16px var(--pad-x); }
+  .cta { order: 2; margin-left: auto; }
+  .toggle { display: inline-flex; order: 3; }
+  .nav { position: absolute; z-index: 20; top: calc(100% - 4px); left: var(--pad-x); right: var(--pad-x); flex-direction: column; align-items: stretch; gap: 0; padding: 8px 16px; border-radius: 16px; background: #fff; box-shadow: 0 16px 40px rgba(118, 78, 67, 0.18); }
+  .nav[data-open="false"] { display: none; }
+  .link { display: flex; align-items: center; min-height: 48px; padding: 4px 0; }
+  .underline { display: none; }
+}

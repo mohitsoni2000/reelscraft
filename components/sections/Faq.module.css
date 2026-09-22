@@ -1,0 +1,20 @@
+.list { display: flex; flex-direction: column; gap: 30px; width: 100%; max-width: 1176px; }
+.item { border-radius: 19px; background: rgb(250,250,250); overflow: hidden; transition: background 0.4s; }
+.item[data-open="true"] { background: rgba(220,145,124,0.3); }
+.heading { font: inherit; }
+.q { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 20px; border: 0; background: transparent; text-align: left; font-size: 18px; color: #000; transition: background 0.3s ease; }
+.q:hover { background: rgba(220,145,124,0.12); }
+.q:active { background: rgba(220,145,124,0.22); }
+.q:focus-visible { outline-offset: -4px; border-radius: 19px; }
+.chev { flex-shrink: 0; transition: transform 0.45s cubic-bezier(.2,.8,.2,1); overflow: visible; }
+.item[data-open="true"] .chev { transform: rotate(90deg); }
+/* Closed answers are also visibility:hidden (after the collapse finishes) so they leave the accessibility tree. */
+.a { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows 0.45s cubic-bezier(.2,.8,.2,1), visibility 0s linear 0.45s; }
+.item[data-open="true"] .a { grid-template-rows: 1fr; visibility: visible; transition-delay: 0s; }
+.aInner { overflow: hidden; padding: 0 20px; font-weight: 300; font-size: 18px; line-height: 1.35; text-wrap: pretty; }
+.aInner span { display: block; padding-bottom: 20px; }
+
+@media (max-width: 639.98px) {
+  .list { gap: 16px; }
+  .q, .aInner { font-size: 16px; }
+}

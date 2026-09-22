@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# Least privilege: this workflow only reads the repository.
+permissions:
+  contents: read
+
+# A newer push to the same branch/PR replaces the run that is still going.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Typecheck, build, verify, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # The real site URL comes from the repository variable SITE_URL (Settings > Secrets and
+      # variables > Actions > Variables). Without it the build uses a placeholder host that is
+      # only accepted because verify-out is run with --allow-placeholder below; scripts/build-deploy.mjs
+      # and the deploy workflow reject it, so it can never reach production.
+      NEXT_PUBLIC_SITE_URL: ${{ vars.SITE_URL || 'https://ci.invalid' }}
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      # Major-version tags. Pinning to commit SHAs is a follow-up (needs network to look them up;
+      # Dependabot below keeps the tags current meanwhile).
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `pretypecheck` / `prebuild` run `npm run images`, so generated images and lib/generated exist.
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build static export (out/)
+        run: npm run build
+
+      - name: Render server config (.htaccess) into out/
+        run: node deploy/render.mjs htaccess --out out
+
+      - name: Verify out/
+        run: npm run verify -- --deploy --allow-placeholder
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        run: npm run test:e2e
+
+      # @lhci/cli is deliberately not a dependency of the project; npx fetches it for this step only.
+      - name: Lighthouse CI
+        run: npx --yes @lhci/cli@0.15.x autorun --config=lighthouserc.json
+
+      - name: Upload reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            playwright-report/
+            test-results/
+            .lighthouseci/
+          include-hidden-files: true # .lighthouseci starts with a dot
+          if-no-files-found: ignore
+          retention-days: 7

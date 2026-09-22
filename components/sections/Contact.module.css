@@ -1,0 +1,32 @@
+.contact { position: relative; overflow: hidden; padding: 70px clamp(16px, 5vw, 75px) 0; gap: 56px; }
+.contact > * { position: relative; }
+.pattern { position: absolute !important; left: -7%; top: 110px; width: 114%; height: 620px; background: var(--img-pattern) 50% 57% / 100% 170% no-repeat; pointer-events: none; -webkit-mask: linear-gradient(180deg, transparent, #000 25%, #000 75%, transparent); mask: linear-gradient(180deg, transparent, #000 25%, #000 75%, transparent); }
+.process { max-width: 900px; width: 100%; text-align: center; }
+.processTitle { margin-bottom: 22px; font-weight: 700; font-size: clamp(18px, 2vw, 29.9px); line-height: 1.1; }
+.steps { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; font-weight: 500; font-size: clamp(14px, 1.4vw, 20px); }
+.stepItem { display: flex; align-items: center; gap: 10px; }
+.step { padding: 10px 18px; border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 1px var(--peach); }
+.stepLast { background: var(--peach); box-shadow: none; font-weight: 700; }
+.stack { width: 100%; max-width: 817px; display: flex; flex-direction: column; align-items: center; }
+.cards { position: relative; z-index: 2; width: 84%; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 30px; }
+.card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 30px 9px; border-radius: 15px; background: #fff; box-shadow: inset 0 0 0 0.74px #000, 0 16px 40px rgba(118,78,67,0.12); color: #000; text-align: center; transition: translate 0.35s cubic-bezier(.2,.8,.2,1); }
+.card:hover, .card:focus-visible { translate: 0 -4px; color: #000; }
+.card:active { translate: 0 -1px; scale: 0.98; transition-duration: 0.15s; }
+.cardLabel { font-size: 19.6px; line-height: 1; color: var(--brown); }
+.cardValue { font-size: clamp(20px, 2vw, 28px); line-height: 1; overflow-wrap: anywhere; }
+.qrCard { position: relative; z-index: 1; width: 100%; margin-top: -60px; padding: 110px 74px 44px; border-radius: 35.5px; background: var(--blush); display: flex; justify-content: center; align-items: flex-end; gap: 47px; flex-wrap: wrap; }
+.qrText { font-weight: 500; font-size: clamp(24px, 2.5vw, 35.5px); line-height: 1.25; }
+.qrText span { display: block; font-weight: 400; }
+.qrText b { display: block; font-weight: 700; font-size: 1.15em; }
+.qr { position: relative; width: 130px; height: 129px; background: #fff; overflow: hidden; flex-shrink: 0; }
+.qrImg { width: 129px; height: 129px; }
+.qrSvg { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+/* Scan line sweeps from y=10 to y=119 (a 109px travel) and back. */
+.scan { animation: scan 1.8s ease-in-out infinite alternate; }
+@keyframes scan { to { translate: 0 109px; } }
+
+@media (max-width: 639.98px) {
+  .contact { padding-top: 48px; gap: 40px; }
+  .cards { width: 92%; gap: 16px; }
+  .qrCard { padding: 96px 24px 32px; gap: 24px; }
+}

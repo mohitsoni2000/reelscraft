@@ -1,0 +1,5 @@
+.marquee { display: flex; overflow: hidden; padding: 14px 0; background: var(--cream); white-space: nowrap; }
+.track { display: flex; width: max-content; animation: slide 56s linear infinite; }
+.group { display: flex; }
+.item { display: inline-flex; align-items: center; gap: 28px; padding-right: 28px; font-weight: 500; font-size: clamp(14px, 1.4vw, 20px); line-height: 1; }
+@keyframes slide { to { transform: translateX(-50%); } }

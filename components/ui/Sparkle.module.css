@@ -1,0 +1,8 @@
+.star {
+  overflow: visible;
+  flex-shrink: 0;
+  transform-origin: 50% 50%;
+  animation: spin var(--spin, 12s) linear infinite, breathe 1.6s ease-in-out infinite alternate;
+}
+@keyframes spin { to { rotate: 360deg; } }
+@keyframes breathe { to { scale: 0.85; } }

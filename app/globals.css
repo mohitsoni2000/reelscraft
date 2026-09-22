@@ -1,0 +1,47 @@
+:root {
+  --peach: rgb(220,145,124);
+  --cream: rgb(252,227,181);
+  --blush: rgb(245,222,216);
+  --brown: rgb(118,78,67);
+  --ivory: rgb(255,249,243);
+  --ink: #000;
+  --pad-x: clamp(16px, 3.5vw, 64px);
+}
+* { box-sizing: border-box; }
+html { overflow-x: clip; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+html, body { margin: 0; padding: 0; background: #fff; color: var(--ink); -webkit-font-smoothing: antialiased; }
+body { font-family: var(--font-montserrat), sans-serif; }
+a { color: inherit; text-decoration: none; }
+a:hover { color: var(--brown); }
+button { font: inherit; cursor: pointer; }
+img { display: block; }
+/* <source> inside <picture> must not render: as a flex/grid child it would still take a `gap` slot. */
+source { display: none; }
+ul { margin: 0; padding: 0; list-style: none; }
+h1, h2, h3, p { margin: 0; }
+::selection { background: var(--cream); }
+
+/* Keyboard focus: visible on every interactive element, invisible for mouse clicks. */
+:focus-visible { outline: 2px solid var(--brown); outline-offset: 3px; }
+main:focus { outline: none; }
+.skip-link { position: absolute; left: 16px; top: -100px; z-index: 1000; padding: 10px 16px; border-radius: 10px; background: var(--brown); color: #fff; font-weight: 500; }
+.skip-link:focus { top: 12px; color: #fff; }
+
+.section { display: flex; flex-direction: column; align-items: center; gap: 50px; padding: 80px var(--pad-x); background: #fff; }
+.serif { font-family: var(--font-pt-serif), Georgia, serif; }
+.script { font-family: var(--font-oooh-baby), cursive; font-weight: 400; }
+.poppins { font-family: var(--font-poppins), sans-serif; }
+.alt { font-family: var(--font-montserrat-alt), sans-serif; }
+.brown { color: var(--brown); }
+
+/* Page shell: the hero pattern sits behind the header and the hero. */
+.shell { position: relative; overflow-x: clip; }
+.shell-pattern { position: absolute; left: -6%; top: -60px; width: 112%; height: 667px; background: var(--img-pattern-glitter) center / cover no-repeat; pointer-events: none; }
+@media (max-width: 639.98px) { .shell-pattern { opacity: 0.55; } }
+.shell-fade { position: absolute; left: 0; right: 0; top: 380px; height: 300px; background: linear-gradient(180deg, rgba(255,255,255,0), #fff); pointer-events: none; }
+
+/* Reduced motion: nothing animates or transitions; all content is already visible. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

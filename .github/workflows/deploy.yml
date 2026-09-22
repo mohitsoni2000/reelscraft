@@ -1,0 +1,254 @@
+name: Deploy
+
+# Builds out/ once, then publishes it to Hostinger over SSH (job "cloud"), checks the live site
+# (job "smoke") and puts the previous release back if that check fails (job "rollback").
+# An optional second target, a VPS with Nginx, is job "vps".
+#
+# Setup (details in docs/DEPLOY.md, section 8):
+#   Repository variables : SITE_URL, HOSTINGER_DOCROOT, CSP_MODE (optional), DEPLOY_VPS (optional)
+#   Environment "production" secrets: HOSTINGER_SSH_HOST, HOSTINGER_SSH_USER, HOSTINGER_SSH_KEY,
+#                                     HOSTINGER_KNOWN_HOSTS  (+ VPS_* secrets for the vps job)
+on:
+  # Manual on purpose: run it (Actions > Deploy > Run workflow, branch "main") once CI is green.
+  # A push trigger would publish before the tests finish, and would also publish merged Dependabot PRs.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Deploys never overlap; a second one waits for the first instead of cancelling it half-way.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+  SSH_PORT: "65002" # Hostinger shared/cloud SSH port
+
+jobs:
+  build:
+    name: Build release
+    # Only the main branch can be published, whatever branch was picked in the "Run workflow" dialog.
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      sha: ${{ steps.rev.outputs.sha }}
+    steps:
+      # Major-version tags; SHA pinning is a follow-up (see ci.yml).
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Resolve commit
+        id: rev
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Require the production URL
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          if [ -z "$SITE_URL" ]; then
+            echo "::error::Repository variable SITE_URL is not set. Add it under Settings > Secrets and variables > Actions > Variables (for example https://your-domain.in)."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Typecheck, lint, next build, .htaccess, verify-out and zip: the same pipeline as a manual release.
+      - name: Build release
+        env:
+          NEXT_PUBLIC_SITE_URL: ${{ vars.SITE_URL }}
+          CSP_MODE: ${{ vars.CSP_MODE || 'enforce' }}
+        run: npm run build:deploy
+
+      - name: Keep the built site
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-out
+          path: out/
+          include-hidden-files: true # without this .htaccess would be dropped from the artifact
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Keep the zip (manual upload fallback)
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-zip
+          path: releases/*.zip
+          if-no-files-found: error
+          retention-days: 30
+
+  cloud:
+    name: Publish to Hostinger
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 20
+    env:
+      HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+      SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+      DOCROOT: ${{ vars.HOSTINGER_DOCROOT }}
+      SHA: ${{ needs.build.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.build.outputs.sha }}
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: site-out
+          path: out
+
+      - name: Check the release is complete
+        run: |
+          for f in out/index.html out/404.html out/.htaccess out/img/.htaccess out/_next/static/.htaccess; do
+            test -f "$f" || { echo "::error::$f is missing from the build artifact"; exit 1; }
+          done
+          test -n "$DOCROOT" || { echo "::error::Repository variable HOSTINGER_DOCROOT is not set (e.g. domains/your-domain.in/public_html)"; exit 1; }
+
+      - name: Configure SSH (pinned host key, no StrictHostKeyChecking=no)
+        env:
+          SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.HOSTINGER_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$SSH_KEY" > "$HOME/.ssh/deploy_key"
+          chmod 600 "$HOME/.ssh/deploy_key"
+          printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 644 "$HOME/.ssh/known_hosts"
+          {
+            echo "SSH_CMD=ssh -p $SSH_PORT -i $HOME/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts"
+          } >> "$GITHUB_ENV"
+
+      - name: Upload to ~/releases/<sha>
+        run: |
+          $SSH_CMD "$SSH_USER@$HOST" 'mkdir -p ~/releases'
+          rsync -az --delete -e "$SSH_CMD" out/ "$SSH_USER@$HOST:releases/$SHA/"
+
+      # deploy/release.sh copies the release into the docroot (assets first, then the rest with
+      # --delete, .well-known preserved), records current/previous and keeps the last 5 releases.
+      - name: Activate release
+        run: |
+          $SSH_CMD "$SSH_USER@$HOST" "DOCROOT='$DOCROOT' KEEP=5 bash -s -- activate $SHA" < deploy/release.sh
+
+  smoke:
+    name: Check the live site
+    needs: [build, cloud]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.build.outputs.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      # verify-out has no npm dependencies, so no install step. Retries give the host's caches time to settle.
+      - name: node scripts/verify-out.mjs --live $SITE_URL
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+          CSP_MODE: ${{ vars.CSP_MODE || 'enforce' }}
+        run: |
+          for attempt in 1 2 3; do
+            if node scripts/verify-out.mjs --live "$SITE_URL" --csp-mode "$CSP_MODE"; then exit 0; fi
+            echo "::warning::Live check failed (attempt $attempt of 3)"
+            [ "$attempt" -lt 3 ] && sleep 30
+          done
+          exit 1
+
+  rollback:
+    name: Roll back to the previous release
+    needs: [build, cloud, smoke]
+    if: ${{ always() && needs.cloud.result == 'success' && needs.smoke.result == 'failure' }}
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+    env:
+      HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+      SSH_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+      DOCROOT: ${{ vars.HOSTINGER_DOCROOT }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.build.outputs.sha }}
+          persist-credentials: false
+
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.HOSTINGER_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$SSH_KEY" > "$HOME/.ssh/deploy_key"
+          chmod 600 "$HOME/.ssh/deploy_key"
+          printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 644 "$HOME/.ssh/known_hosts"
+          echo "SSH_CMD=ssh -p $SSH_PORT -i $HOME/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts" >> "$GITHUB_ENV"
+
+      - name: Put the previous release back
+        run: |
+          $SSH_CMD "$SSH_USER@$HOST" "DOCROOT='$DOCROOT' bash -s -- rollback" < deploy/release.sh
+          echo "::warning::The live check failed, so the previous release was restored. This run stays red on purpose."
+
+  vps:
+    name: Publish to VPS (optional)
+    needs: build
+    # Off unless the repository variable DEPLOY_VPS is exactly "true".
+    if: ${{ vars.DEPLOY_VPS == 'true' }}
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 20
+    env:
+      HOST: ${{ secrets.VPS_SSH_HOST }}
+      SSH_USER: ${{ secrets.VPS_SSH_USER }} # a non-root deploy user
+      VPS_PORT: ${{ vars.VPS_SSH_PORT || '22' }}
+      SHA: ${{ needs.build.outputs.sha }}
+      BASE: /var/www/reelcraft
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: site-out
+          path: out
+
+      - name: Check the release is complete
+        run: test -f out/index.html && test -f out/404.html
+
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$SSH_KEY" > "$HOME/.ssh/vps_key"
+          chmod 600 "$HOME/.ssh/vps_key"
+          printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 644 "$HOME/.ssh/known_hosts"
+          echo "SSH_CMD=ssh -p $VPS_PORT -i $HOME/.ssh/vps_key -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts" >> "$GITHUB_ENV"
+
+      - name: Upload to $BASE/releases/<sha>
+        run: |
+          $SSH_CMD "$SSH_USER@$HOST" "mkdir -p '$BASE/releases/$SHA'"
+          rsync -az --delete -e "$SSH_CMD" out/ "$SSH_USER@$HOST:$BASE/releases/$SHA/"
+
+      # ln -sfn builds the new link next to the old one, mv -T swaps it atomically (GNU coreutils).
+      # The deploy user needs exactly two sudo rights (see docs/DEPLOY.md, section 9): nginx -t and reload.
+      - name: Switch "current" and reload Nginx
+        run: |
+          $SSH_CMD "$SSH_USER@$HOST" "set -euo pipefail
+            cd '$BASE'
+            ln -sfn 'releases/$SHA' current.new
+            mv -Tf current.new current
+            sudo -n nginx -t && sudo -n systemctl reload nginx
+            { ls -1t releases | grep -Fxv '$SHA' || true; } | tail -n +5 | while read -r old; do rm -rf -- \"releases/\$old\"; done"

@@ -1,0 +1,3 @@
+.arrow { overflow: visible; flex-shrink: 0; }
+.nudge { animation: nudge 0.8s ease-in-out infinite alternate; }
+@keyframes nudge { to { translate: 4px 0; } }

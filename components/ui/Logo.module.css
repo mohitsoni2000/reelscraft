@@ -1,0 +1,16 @@
+.logo { display: block; flex-shrink: 0; }
+.svg { display: block; overflow: visible; transition: transform 0.3s cubic-bezier(.2,.8,.2,1); }
+.logo:hover .svg { transform: scale(1.06); }
+.logo:active .svg { transform: scale(0.95); transition-duration: 0.15s; }
+
+/* pathLength="1" normalises every path, so one dash length draws any outline.
+   The resting style is the finished logo; the keyframes only define where it starts,
+   so with animations off (reduced motion) the logo is simply complete. */
+.path {
+  stroke-dasharray: 1;
+  animation:
+    draw 1.3s cubic-bezier(0.455, 0.03, 0.515, 0.955) backwards,
+    fill 0.7s ease 0.9s backwards;
+}
+@keyframes draw { from { stroke-dashoffset: 1; } }
+@keyframes fill { from { fill-opacity: 0; } }

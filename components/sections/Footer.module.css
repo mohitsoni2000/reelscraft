@@ -1,0 +1,2 @@
+.footer { position: relative; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 10px; padding: 56px var(--pad-x) 70px; background: #fff; font-size: 14px; color: rgba(0,0,0,0.6); }
+.icon { width: 18px; height: 18px; }

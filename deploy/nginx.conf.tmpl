@@ -1,0 +1,140 @@
+# Generated from deploy/nginx.conf.tmpl by `node deploy/render.mjs nginx --domain {{DOMAIN}}`.
+# Static root: {{ROOT}}   |   CSP mode: {{CSP_MODE}}   |   works on nginx >= 1.9.5 (newer versions only print a
+# harmless "listen ... http2 is deprecated" warning in `nginx -t`).
+#
+# One-time setup on the VPS (as root):
+#   1. node deploy/render.mjs nginx-headers > /etc/nginx/snippets/reelcraft-headers.conf
+#   2. node deploy/render.mjs nginx --domain {{DOMAIN}} --bootstrap > /etc/nginx/sites-available/reelcraft
+#      (--bootstrap = HTTP only, so `nginx -t` passes before any certificate exists)
+#   3. ln -s /etc/nginx/sites-available/reelcraft /etc/nginx/sites-enabled/reelcraft
+#   4. mkdir -p {{ACME_ROOT}} && nginx -t && systemctl reload nginx
+#   5. obtain the certificate (certbot --webroot, see docs/DEPLOY.md)
+#   6. node deploy/render.mjs nginx --domain {{DOMAIN}} > /etc/nginx/sites-available/reelcraft   (the full file)
+#   7. nginx -t && systemctl reload nginx
+#
+# nginx only inherits add_header from an outer block when the inner block has NONE of its own.
+# Every location below sets Cache-Control with add_header, so each one includes the shared
+# security-header snippet explicitly.
+
+# --- HTTP: ACME challenges + redirect to the canonical HTTPS host ------------------------
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{DOMAIN}} {{ALT_HOST}};
+
+    location ^~ /.well-known/acme-challenge/ {
+        root {{ACME_ROOT}};
+        default_type text/plain;
+    }
+
+    location / {
+        return 301 https://{{DOMAIN}}$request_uri;
+    }
+}
+
+#--BEGIN-TLS--
+# --- HTTPS: alternate host (www <-> apex) redirects to the canonical host ----------------
+# The certificate must cover both names (certbot -d {{DOMAIN}} -d {{ALT_HOST}}).
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name {{ALT_HOST}};
+
+    ssl_certificate     /etc/letsencrypt/live/{{DOMAIN}}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{DOMAIN}}/privkey.pem;
+
+    return 301 https://{{DOMAIN}}$request_uri;
+}
+
+# --- HTTPS: the site ------------------------------------------------------------------------
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name {{DOMAIN}};
+
+    ssl_certificate     /etc/letsencrypt/live/{{DOMAIN}}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{DOMAIN}}/privkey.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_session_cache   shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+
+    root {{ROOT}};
+    index index.html;
+    charset utf-8;
+    server_tokens off;
+
+    # text/html is always compressed once gzip is on. Brotli needs the ngx_brotli module
+    # (not in stock nginx); enable `brotli on;` here only if you installed it.
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 5;
+    gzip_min_length 256;
+    gzip_types text/plain text/css text/xml application/xml application/json application/javascript text/javascript application/manifest+json image/svg+xml image/x-icon;
+
+    error_page 404 /404.html;
+
+    # Dotfiles are never served (.well-known below is the only exception).
+    location ~ /\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+
+    location ^~ /.well-known/ {
+        include {{HEADERS_SNIPPET}};
+        add_header Cache-Control "{{CACHE_REVALIDATE}}" always;
+        try_files $uri =404;
+    }
+
+    # Custom 404 page. Served with status 404 by error_page; not reachable as a normal page.
+    location = /404.html {
+        internal;
+        include {{HEADERS_SNIPPET}};
+        add_header Cache-Control "{{CACHE_REVALIDATE}}" always;
+    }
+
+    # Content-hashed files: cache for a year. No `always` on Cache-Control on purpose,
+    # so a 404 for a file that is not uploaded yet is never cached as immutable.
+    location ^~ /_next/static/ {
+        include {{HEADERS_SNIPPET}};
+        add_header Cache-Control "{{CACHE_IMMUTABLE}}";
+        access_log off;
+        try_files $uri =404;
+    }
+
+    location ^~ /img/ {
+        include {{HEADERS_SNIPPET}};
+        add_header Cache-Control "{{CACHE_IMMUTABLE}}";
+        access_log off;
+        try_files $uri =404;
+    }
+
+    # Not content-hashed: one day.
+    location ^~ /og/ {
+        include {{HEADERS_SNIPPET}};
+        add_header Cache-Control "{{CACHE_ONE_DAY}}";
+        try_files $uri =404;
+    }
+
+    location ~ ^/(?:favicon\.ico|icon\.svg|apple-touch-icon\.png|manifest\.webmanifest|site\.webmanifest)$ {
+        include {{HEADERS_SNIPPET}};
+        add_header Cache-Control "{{CACHE_ONE_DAY}}";
+        try_files $uri =404;
+    }
+
+    # HTML, robots.txt, sitemap.xml, RSC payloads: always revalidate.
+    location ~* \.(?:html|txt|xml)$ {
+        include {{HEADERS_SNIPPET}};
+        add_header Cache-Control "{{CACHE_REVALIDATE}}" always;
+        try_files $uri =404;
+    }
+
+    location / {
+        include {{HEADERS_SNIPPET}};
+        add_header Cache-Control "{{CACHE_REVALIDATE}}" always;
+        try_files $uri $uri.html $uri/ =404;
+    }
+}
+#--END-TLS--

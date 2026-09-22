@@ -1,0 +1,13 @@
+/* Sizing and position belong to whichever section places the badge (see Hero.module.css .badgeSlot,
+   VisualShoots.module.css .square) — this component only fills whatever box it is given. */
+.badge { display: block; width: 100%; height: 100%; overflow: visible; }
+.text { font-family: var(--font-montserrat), sans-serif; font-weight: 500; font-size: 19px; }
+
+/* The ring of text turns slowly around the circle's centre (view-box, not the text's own bounding box,
+   so it spins on-axis instead of wobbling). Paused off-screen (data-loop) and killed by
+   prefers-reduced-motion (both handled globally, see components/motion/MotionController.tsx). */
+.spin { transform-box: view-box; transform-origin: 50% 50%; animation: turn 40s linear infinite; }
+@keyframes turn { to { rotate: 360deg; } }
+
+/* On phones the badge is small enough that the sentence stops being legible. */
+@media (max-width: 639.98px) { .text { display: none; } }

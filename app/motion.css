@@ -1,0 +1,11 @@
+/*
+ * Decorative loops (sparkles, marquee, play-button rings, orbit, QR scan line,
+ * arrow nudge) are pure CSS animations declared in each component's module.
+ * MotionController marks the ones that are off-screen with data-inview="false",
+ * which pauses them so they stop costing frames. Without JavaScript they simply
+ * keep running; under prefers-reduced-motion globals.css switches them off.
+ */
+[data-loop][data-inview="false"],
+[data-loop][data-inview="false"] * {
+  animation-play-state: paused !important;
+}
