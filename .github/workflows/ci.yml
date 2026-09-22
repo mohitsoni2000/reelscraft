@@ -28,7 +28,7 @@ jobs:
     steps:
       # Major-version tags. Pinning to commit SHAs is a follow-up (needs network to look them up;
       # Dependabot below keeps the tags current meanwhile).
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
