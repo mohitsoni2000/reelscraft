@@ -111,6 +111,14 @@ server {
         try_files $uri =404;
     }
 
+    # Feed reels (tap to play). nginx answers Range requests for static files by default.
+    location ^~ /video/ {
+        include {{HEADERS_SNIPPET}};
+        add_header Cache-Control "{{CACHE_IMMUTABLE}}";
+        access_log off;
+        try_files $uri =404;
+    }
+
     # Not content-hashed: one day.
     location ^~ /og/ {
         include {{HEADERS_SNIPPET}};

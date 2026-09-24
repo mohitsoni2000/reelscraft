@@ -5,11 +5,14 @@
  * run `npm run images`, and update the alt text here. Ids are the filename
  * without the extension.
  *
- * NOTE: the alt texts below describe the CURRENT placeholder images (the
- * gallery pages are family photo-book pages, the feed items are reel covers).
- * Rewrite them when you swap in real work.
+ * NOTE: the gallery alt texts describe the CURRENT placeholder images (family
+ * photo-book pages). Rewrite them when you swap in real work.
+ *
+ * Feed reels: videos come from `swift scripts/encode-reels.swift`, which also
+ * writes each poster (reelN.jpg) into assets-src/images/.
  */
 import type { ImageId } from "@/lib/generated/images";
+import { reelVideos } from "./videos.generated";
 
 export type Photo = { id: ImageId; alt: string };
 
@@ -29,11 +32,13 @@ export const preShoots: Photo[] = [
   { id: "pre8", alt: "Photo-book cover titled A lifetime together showing an older couple in a garden" },
 ];
 
-export const feedReels: (Photo & { label: string })[] = [
-  { id: "feed1", alt: "", label: "Watch reel 1 on Instagram: a groom and bride under fireworks" },
-  { id: "feed2", alt: "", label: "Watch reel 2 on Instagram: a couple in red and ivory wedding attire" },
-  { id: "feed3", alt: "", label: "Watch reel 3 on Instagram: a couple embracing at night" },
-  { id: "feed4", alt: "", label: "Watch reel 4 on Instagram: bangled hands and a couple at the ceremony" },
+/** Tap-to-play reels. `label` names the video for screen readers (the poster itself is decorative). */
+export const feedReels: { id: ImageId; video: string; label: string }[] = [
+  { id: "reel1", video: reelVideos.reel1, label: "Roka reel 1: the bride's friends gathering around her" },
+  { id: "reel2", video: reelVideos.reel2, label: "Roka reel 2: the bride's entry in a purple gown" },
+  { id: "reel3", video: reelVideos.reel3, label: "Roka reel 3: the groom kneels with a bouquet" },
+  { id: "reel4", video: reelVideos.reel4, label: "Roka reel 4: the ring exchange under the couple's monogram" },
+  { id: "reel5", video: reelVideos.reel5, label: "Roka reel 5: family dancing and celebrating" },
 ];
 
 export const qrAlt = "QR code to Reel Craft's latest work";

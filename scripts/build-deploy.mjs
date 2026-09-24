@@ -208,7 +208,7 @@ run("zip", "zip", ["-r", "-X", "-q", zipPath, ".", "-x", "*.DS_Store"], buildEnv
 // The archive must contain the dotfiles (a zip made with a file manager often drops them).
 const listing = spawnSync("zip", ["-sf", zipPath], { encoding: "utf8" });
 const entries = listing.status === 0 ? listing.stdout.split("\n").map((l) => l.trim()).filter((l) => l && !l.endsWith("/") && !/^(Archive contains:|Total )/.test(l)) : [];
-const mustContain = ["index.html", "404.html", ".htaccess", "_next/static/.htaccess", "img/.htaccess"];
+const mustContain = ["index.html", "404.html", ".htaccess", "_next/static/.htaccess", "img/.htaccess", "video/.htaccess"];
 const absent = mustContain.filter((name) => !entries.includes(name));
 if (entries.length === 0) die("Could not read the zip listing (`zip -sf`).", `Inspect ${path.relative(ROOT, zipPath)} manually.`);
 if (absent.length) die(`The zip is missing: ${absent.join(", ")}`, "Do not upload it. Re-run the build; if it persists, check the .htaccess step above.");

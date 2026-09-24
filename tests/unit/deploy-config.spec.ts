@@ -93,10 +93,11 @@ test.describe("deploy/headers.mjs", () => {
     expect(text).toMatch(/<FilesMatch "\^\(favicon\\\.ico\|[^"]*apple-touch-icon\\\.png[^"]*\)\$">\s+Header set Cache-Control "public, max-age=86400"/);
 
     const byDir = Object.fromEntries(DIRECTORY_CACHE_RULES.map((rule: { dir: string; cacheControl: string; why: string }) => [rule.dir, rule]));
-    expect(Object.keys(byDir).sort()).toEqual(["_next/static", "img", "og"]);
+    expect(Object.keys(byDir).sort()).toEqual(["_next/static", "img", "og", "video"]);
     expect(renderDirectoryHtaccess(byDir["_next/static"])).toContain('Header set Cache-Control "public, max-age=31536000, immutable"');
     expect(renderDirectoryHtaccess(byDir.img)).toContain("immutable");
     expect(renderDirectoryHtaccess(byDir.og)).toContain('"public, max-age=86400"');
+    expect(renderDirectoryHtaccess(byDir.video)).toContain("immutable");
     const imgRules = renderDirectoryHtaccess(byDir.img).replace(/^#.*$/gm, "");
     expect(imgRules, "immutable rules must not use 'always' (a 404 must not be cached for a year)").not.toContain("always");
   });
@@ -109,7 +110,7 @@ test.describe("deploy/headers.mjs", () => {
 
     const result = writeHtaccessFiles(out, { cspMode: "report-only" });
     expect(result.written.sort()).toEqual([".htaccess", "_next/static/.htaccess", "img/.htaccess"]);
-    expect(result.skipped).toEqual(["og"]);
+    expect(result.skipped.sort()).toEqual(["og", "video"]);
     expect(fs.readFileSync(path.join(out, "img", ".htaccess"), "utf8")).toContain("immutable");
     expect(() => writeHtaccessFiles(path.join(out, "missing"))).toThrow(/not found/);
   });
@@ -130,6 +131,7 @@ test.describe("deploy/headers.mjs", () => {
     expect(immutable?.body).toContain('add_header Cache-Control "public, max-age=31536000, immutable";');
     expect(immutable?.body, "no `always` on the immutable header").not.toMatch(/immutable"\s+always/);
     expect(blocks.find((b) => b.name === "^~ /img/")?.body).toContain("immutable");
+    expect(blocks.find((b) => b.name === "^~ /video/")?.body).toContain("immutable");
     // Two `location /` blocks exist: the port-80 redirect and the site itself.
     expect(blocks.filter((b) => b.name === "/").some((b) => b.body.includes("try_files $uri $uri.html $uri/ =404;"))).toBe(true);
 

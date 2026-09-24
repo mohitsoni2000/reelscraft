@@ -119,7 +119,7 @@ export function getHeaders({ cspMode } = {}) {
 // ---------------------------------------------------------------------------
 
 export const CACHE = {
-  /** Content-hashed files only (see verify-out.mjs: img/ names must contain a hash). */
+  /** Content-hashed files only (see verify-out.mjs: img/ and video/ names must contain a hash). */
   immutable: "public, max-age=31536000, immutable",
   /** HTML, robots.txt, sitemap.xml, RSC .txt payloads: always revalidate. */
   revalidate: "no-cache",
@@ -148,6 +148,7 @@ export const ROOT_STATIC_FILES = [
 export const DIRECTORY_CACHE_RULES = [
   { dir: "_next/static", cacheControl: CACHE.immutable, why: "hashed by Next.js" },
   { dir: "img", cacheControl: CACHE.immutable, why: "file names contain an 8-char content hash (npm run images)" },
+  { dir: "video", cacheControl: CACHE.immutable, why: "file names contain an 8-char content hash (scripts/encode-reels.swift)" },
   { dir: "og", cacheControl: CACHE.oneDay, why: "social preview image, not content-hashed" },
 ];
 
@@ -216,6 +217,7 @@ export function renderHtaccess(options = {}) {
     "<IfModule mod_mime.c>",
     "AddType image/avif .avif",
     "AddType image/webp .webp",
+    "AddType video/mp4 .mp4",
     "AddType font/woff2 .woff2",
     "AddType application/manifest+json .webmanifest",
     "</IfModule>",

@@ -9,7 +9,6 @@ import Footer from "@/components/sections/Footer";
 import Hero from "@/components/sections/Hero";
 import Marquee from "@/components/sections/Marquee";
 import PreShootGallery from "@/components/sections/PreShootGallery";
-import Pricing from "@/components/sections/Pricing";
 import VisualShoots from "@/components/sections/VisualShoots";
 
 export default function Page() {
@@ -26,7 +25,6 @@ export default function Page() {
         <PreShootGallery />
         <Feed />
         <Faq />
-        <Pricing />
         <Contact />
       </main>
       <Footer />

@@ -18,3 +18,6 @@ app/generated-images.css
 
 # local code-review-graph index (tooling artefact)
 .code-review-graph/
+
+# Roka reel masters (~177 MB) from Google Drive; encoded copies live in public/video/
+assets-src/videos/

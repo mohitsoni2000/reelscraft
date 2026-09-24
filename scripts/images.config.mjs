@@ -97,12 +97,13 @@ export const images = [
   preshoot(7),
   preshoot(8),
 
-  // Feed cards are 297.5px wide but object-fit: cover scales the wider crops up
-  // (feed2 renders 426px wide, feed4 355px), so the ladders differ per image.
-  photo("feed1", [300, 450, 600], [300]),
-  photo("feed2", [430, 640, 860], [426]),
-  photo("feed3", [300, 450, 600], [300]),
-  photo("feed4", [360, 540, 720], [355]),
+  // Feed reel posters: 720x1280 frames pulled by scripts/encode-reels.swift.
+  // Same 9:16 shape as the 297.5px-wide card, so no cover scaling.
+  photo("reel1", [300, 450, 600], [300]),
+  photo("reel2", [300, 450, 600], [300]),
+  photo("reel3", [300, 450, 600], [300]),
+  photo("reel4", [300, 450, 600], [300]),
+  photo("reel5", [300, 450, 600], [300]),
 
   photo("about-photo", [470, 736], [465]),
   // PNG with alpha, intrinsic 581 (< 600 display): top rung is the intrinsic size.
@@ -140,8 +141,10 @@ export const images = [
   // Instagram glyph shown at 27px and 18px.
   alpha("insta", [54, 108], [27, 18]),
 
-  // QR code: 41x41 modules, must stay razor sharp. Nearest-neighbour keeps the
-  // two colours pure; lossless webp + png, no avif.
+  // QR code (Instagram name-tag style, round dots, @reelcraft.films), cropped
+  // from PDF.pdf with a white quiet zone. Nearest-neighbour drops dots at 129px
+  // and the code stops scanning, so it is downscaled with lanczos3 (verified
+  // with a decoder at both rungs). Lossless webp + png, no avif.
   {
     id: "qr",
     source: "qr.png",
@@ -149,7 +152,7 @@ export const images = [
     widths: [129, 258],
     formats: ["webp", "png"],
     quality: {},
-    kernel: "nearest",
+    kernel: "lanczos3",
     display: [129],
   },
 ];

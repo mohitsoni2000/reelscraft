@@ -34,6 +34,10 @@ export default function Contact() {
             <span className={styles.cardLabel}>{contactCopy.emailLabel}</span>
             <span className={styles.cardValue}>{site.email}</span>
           </a>
+          <a data-card href={site.instagramUrl} className={`poppins ${styles.card}`}>
+            <span className={styles.cardLabel}>{contactCopy.instagramLabel}</span>
+            <span className={styles.cardValue}>{site.instagram}</span>
+          </a>
         </div>
         <div data-qr className={styles.qrCard}>
           <p className={`poppins ${styles.qrText}`}><span>{contactCopy.qrLead}</span><b>{contactCopy.qrStrong}</b></p>

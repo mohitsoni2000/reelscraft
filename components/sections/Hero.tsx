@@ -48,7 +48,7 @@ export default function Hero() {
       <div className={styles.meta}>
         <a data-meta href={site.instagramUrl} className={styles.insta}>
           <Picture id="insta" alt="" sizes="27px" className={styles.instaIcon} />
-          <span>{site.instagram}</span>
+          <span>{heroCopy.instaCta}</span>
         </a>
         <p data-meta className={styles.tagline}>{site.tagline}</p>
       </div>

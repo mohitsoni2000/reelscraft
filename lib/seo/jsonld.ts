@@ -1,4 +1,3 @@
-import { plans } from "@/content/copy";
 import { site, siteUrl } from "@/content/site";
 
 /** schema.org data for search engines. No street address is published because none is configured. */
@@ -23,16 +22,6 @@ export function buildJsonLd() {
         telephone: site.phone,
         email: site.email,
         sameAs: [site.instagramUrl],
-        makesOffer: plans.map((p) => ({
-          "@type": "Offer",
-          price: p.price,
-          priceCurrency: "INR",
-          itemOffered: {
-            "@type": "Service",
-            name: `${p.name} wedding reel package`,
-            description: `${p.coverage} — ${p.reels}`,
-          },
-        })),
       },
     ],
   };

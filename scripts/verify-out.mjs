@@ -43,6 +43,10 @@ export const LIMITS = {
   imgFileMax: 250 * KB,
   imgTotalWarn: 6 * MB,
   imgTotalMax: 8 * MB,
+  // Reels load only on tap, so they sit outside the page-weight budget, but one reel
+  // is one tap on mobile data: keep each file small (see scripts/encode-reels.swift).
+  videoFileMax: 10 * MB,
+  videoTotalMax: 30 * MB,
   indexGzipMax: 40 * KB,
   ogWarn: 300 * KB, // WhatsApp/Facebook can skip previews for larger og:image files
 };
@@ -369,6 +373,7 @@ function verifyStatic(opts, report) {
   const siteOrigin = checkIndexHtml({ outDir, files, fileSet, read, opts, report });
   checkSitemapAndRobots({ fileSet, read, siteOrigin, opts, report });
   checkImages({ files, fileSet, report });
+  checkVideos({ files, report });
   checkHygiene({ outDir, files, opts, report });
   checkHtaccess({ fileSet, read, opts, report });
 }
@@ -679,6 +684,25 @@ function checkImages({ files, fileSet, report }) {
   const og = files.find((f) => f.rel === "og/og.jpg");
   if (og && og.size > LIMITS.ogWarn) report.warn(`og/og.jpg is ${fmt(og.size)}; keep it under ${fmt(LIMITS.ogWarn)} so WhatsApp/Facebook show the preview`);
   void fileSet;
+}
+
+function checkVideos({ files, report }) {
+  const videos = files.filter((f) => f.rel.startsWith("video/") && f.rel !== "video/.htaccess");
+  if (videos.length === 0) return;
+  report.section("Video budgets");
+  const oversized = videos.filter((f) => f.size > LIMITS.videoFileMax);
+  if (oversized.length) {
+    report.fail(`${oversized.length} file(s) in out/video exceed ${fmt(LIMITS.videoFileMax)}: ${preview(oversized.map((f) => `${f.rel} (${fmt(f.size)})`))}`, "Re-encode with `swift scripts/encode-reels.swift` or trim the master.");
+  } else report.pass(`every file in out/video is <= ${fmt(LIMITS.videoFileMax)}`);
+
+  const unhashed = videos.filter((f) => !/\.[0-9a-f]{8}\.mp4$/.test(f.rel));
+  if (unhashed.length) {
+    report.fail(`out/video files that are not <name>.<hash8>.mp4: ${preview(unhashed.map((f) => f.rel))}`, "video/ is cached as immutable for a year, so every file name must change when its content changes.");
+  } else report.pass("all out/video file names carry a content hash");
+
+  const total = videos.reduce((sum, f) => sum + f.size, 0);
+  if (total > LIMITS.videoTotalMax) report.fail(`out/video totals ${fmt(total)} (max ${fmt(LIMITS.videoTotalMax)})`);
+  else report.pass(`out/video totals ${fmt(total)} across ${videos.length} files (fail > ${fmt(LIMITS.videoTotalMax)})`);
 }
 
 function checkHygiene({ outDir, files, opts, report }) {

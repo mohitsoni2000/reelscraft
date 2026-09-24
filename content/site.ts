@@ -14,11 +14,11 @@ export const site = {
   description:
     "Wedding reel management by Reel Craft: shoot-day coordination, cinematic edits and Instagram-ready reels delivered in 48-72 hours.",
   tagline: "Wedding Reel Management & Content Solutions",
-  instagram: "@Reelcraft_01",
-  instagramUrl: "https://instagram.com/Reelcraft_01",
-  phone: "+91 9944883494",
-  phoneHref: "tel:+919944883494",
-  email: "reelcraft@gmail.com",
+  instagram: "@reelcraft.films",
+  instagramUrl: "https://instagram.com/reelcraft.films",
+  phone: "+91 83073-67398",
+  phoneHref: "tel:+918307367398",
+  email: "thereelcraftfilms@gmail.com",
 } as const;
 
 /** Label of the call-to-action button in the header. */
@@ -26,6 +26,5 @@ export const navCta = "Contact Us";
 
 export const nav = [
   { label: "About", href: "#about" },
-  { label: "Our Services", href: "#services" },
-  { label: "Price & Planning", href: "#pricing" },
+  { label: "Our Services", href: "#feed" },
 ] as const;

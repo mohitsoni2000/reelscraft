@@ -4,9 +4,17 @@
 .card:active { filter: brightness(0.94); }
 .img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: scale 0.6s ease; }
 .play { position: absolute; inset: 0; transition: scale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-.card:hover .img, .card:focus-visible .img { scale: 1.06; }
-.card:hover .play, .card:focus-visible .play { scale: 1.15; }
+/* Transparent hit area over the whole poster; the ring inside it is the focus indicator. */
+.trigger { position: absolute; inset: 0; width: 100%; border: 0; padding: 0; background: none; cursor: pointer; border-radius: inherit; }
+.trigger:focus-visible { outline: 3px solid var(--peach); outline-offset: -6px; }
+/* Covers the poster; transparent until the first frame paints, so the poster shows through meanwhile. */
+.video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: transparent; }
+.video:focus-visible { outline: 3px solid var(--peach); outline-offset: -6px; }
+.card:hover .img, .card:has(.trigger:focus-visible) .img { scale: 1.06; }
+.card:hover .play, .card:has(.trigger:focus-visible) .play { scale: 1.15; }
 
 @media (max-width: 639.98px) {
   .grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  /* An odd reel count leaves the last card alone on its row: centre it at the same width. */
+  .card:last-child:nth-child(odd) { grid-column: 1 / -1; justify-self: center; width: calc(50% - 8px); }
 }

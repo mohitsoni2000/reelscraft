@@ -146,6 +146,8 @@ test.describe("verify-out (static)", () => {
     { name: "robots.txt blocks everything", expected: "disallows the whole site", mutate: (s) => s.write("robots.txt", `User-agent: *\nDisallow: /\nSitemap: ${SITE}/sitemap.xml\n`) },
     { name: "image over 250 KB", expected: "exceed 250.0 KB", mutate: (s) => s.write("img/big.dddddddd.webp", Buffer.alloc(260 * 1024, 0x41)) },
     { name: "image name without a content hash", expected: "without an 8-character content hash", mutate: (s) => s.write("img/plain.webp", Buffer.alloc(100, 0x41)) },
+    { name: "video over 10 MB", expected: "exceed 10.00 MB", mutate: (s) => s.write("video/big.dddddddd.mp4", Buffer.alloc(11 * 1024 * 1024, 0x41)) },
+    { name: "video name without a content hash", expected: "not <name>.<hash8>.mp4", mutate: (s) => s.write("video/plain.mp4", Buffer.alloc(100, 0x41)) },
     { name: "out/img over 8 MB", expected: "out/img totals", mutate: (s) => { for (let i = 0; i < 40; i++) s.write(`img/bulk${i}.${String(i).padStart(8, "e")}.webp`, Buffer.alloc(240 * 1024, 0x41)); } },
     { name: "missing og image file", expected: "og/og.jpg is missing", mutate: (s) => s.remove("og/og.jpg") },
     { name: "source map", expected: "source maps in the build", mutate: (s) => s.write("_next/static/chunks/app.js.map", "{}") },

@@ -66,8 +66,18 @@ test.describe("primary navigation on wide screens", () => {
     await page.goto("/");
     const nav = page.locator('header nav[aria-label="Primary"]');
     await expect(nav).toBeVisible();
-    expect(await nav.getByRole("link").count(), "primary navigation links").toBeGreaterThanOrEqual(3);
+    expect(await nav.getByRole("link").count(), "primary navigation links").toBeGreaterThanOrEqual(2);
     await expect(page.locator(TOGGLE)).toBeHidden();
+  });
+
+  test("every in-page link points at a section that exists", async ({ page }) => {
+    await page.goto("/");
+    const hrefs = await page.locator('header a[href^="#"]').evaluateAll((links) => links.map((a) => a.getAttribute("href")!));
+    expect(hrefs.length).toBeGreaterThan(0);
+    for (const href of hrefs) {
+      if (href === "#") continue;
+      await expect(page.locator(href), `target of ${href}`).toHaveCount(1);
+    }
   });
 
   test("the toggle appears exactly below 640px", async ({ page }) => {

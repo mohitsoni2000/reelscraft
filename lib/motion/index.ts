@@ -2,7 +2,7 @@ import { about } from "./about";
 import { contact } from "./contact";
 import { galleryEntrance } from "./gallery";
 import { hero, nav } from "./hero";
-import { faq, feed, pricing } from "./sections";
+import { faq, feed } from "./sections";
 import { visualShoots } from "./visual-shoots";
 
 /**
@@ -17,6 +17,5 @@ export const sectionMotion: Record<string, (root: HTMLElement) => void> = {
   gallery: galleryEntrance,
   feed,
   faq,
-  pricing,
   contact,
 };

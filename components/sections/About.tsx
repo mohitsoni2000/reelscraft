@@ -21,7 +21,7 @@ export default function About() {
             <span className={styles.boldLine}>{about.headingBold}</span>
           </h2>
           <DrawLine maxWidth={470} />
-          <p data-reveal className={styles.body}>{about.intro[0]}<br />{about.intro[1]}</p>
+          <p data-reveal className={styles.body}>{about.body}</p>
           <ul className={styles.list}>
             {about.points.map((point) => (
               <li key={point} data-item className={styles.item}>
